@@ -186,15 +186,15 @@ Where S is the environment state space, A is the action space, and T is the stat
 
 Our true task objective $F: \Pi \rightarrow R$, policy to scalar performance eval
 
-A sim2real algorithm for reward design + Domain Randomization takes M and a list of tasks $l_{task}$, and outputs reward fun R and distribution over transition functions $\Tau$.
+A sim2real algorithm for reward design + Domain Randomization takes M and a list of tasks $l_{task}$, and outputs reward fun R and distribution over transition functions $\tau$.
 
-Our policy learning algorithm A takes $(M, \Tau, R)$ and outputs policy $\pi $
+Our policy learning algorithm A takes $(M, \tau, R)$ and outputs policy $\pi $
 
 The final policy is evaluated on unknown true MDP (real world) M*
 $f* := F_M*(\pi)$
 
 The goal of sim2real is to design physics params P and reward function R to maximize f*:
-$max_{\Tau, R} F_M * (A(M, \Tau, R))$
+$max_{\tau, R} F_M * (A(M, \tau, R))$
 
 ### Algorithm
 
@@ -223,14 +223,14 @@ Run-through:
 3. Low and upper limits neg and pos infinity
 4. For each search value r in R (5 - 8)
 5. Set sim randomization param p to r
-6. Evaluate policy in sim and record trajectory \tau
-7. Evalue \tau on success criteria F
+6. Evaluate policy in sim and record trajectory $\tau$
+7. Evalue $\tau$ on success criteria F
 8. Set the parameter lower limit to the maximum of r and lower limit and upper limit to the minimum of r and upper limit
 9. Output lower and upper limits for each param p
 
 #### Stage 3: Generate Reward functions and evaluate policies
 
-LLM uses resulting “reward aware physics priors (RAPP)” to generate DR config candidates $\Tau_{1..m}$
+LLM uses resulting “reward aware physics priors (RAPP)” to generate DR config candidates $\tau_{1..m}$
 1. Given the DR configuration candidate, generated reward function, and environment simulator, 
 2. Retrain policies suitable for real-world deployment using reinforcement learning on each DR config candidate
 3. Evaluate all policies pi in the real world and choose the ‘best performing’

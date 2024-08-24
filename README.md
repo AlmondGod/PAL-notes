@@ -1,4 +1,4 @@
-# Jason Ma and Dinesh Jayaraman, UPenn’s Perception-Action-Learning Lab: A Summary of Reinforcement Learning Papers
+# UPenn’s Perception-Action-Learning Lab: A Summary of Three Reinforcement Learning Papers
 
 # How Far I’ll Go: Offline Goal-Conditioned RL via F-Advantage Regression
 Yecheng Jason Ma, Jason Yan, Dinesh Jayaraman, Osbert Bastani

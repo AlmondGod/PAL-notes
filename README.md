@@ -10,17 +10,17 @@ Perfect offline goal-condition RL would mean the ability to learn any task from 
 ### Context:
 
 #### [Goal-Conditioned RL](https://arxiv.org/pdf/2201.08299): 
-In offline GCRL, we have a static dataset of transitions (s,a,r,...) with goal g (if the data is not generated from a goal-directed agent, then g is randomly drawn from p(g), our desired goals). 
+In offline GCRL, we have a static dataset of transitions $(s,a,r,...)$ with goal $g$ (if the data is not generated from a goal-directed agent, then $g$ is randomly drawn from $p(g)$, our desired goals). 
 
 We have extra tuple inputs to the problem:
-- G, representing the space of goals for each task (Goals can be images, natural language, expected returns, etc)
+- $G$, representing the space of goals for each task (Goals can be images, natural language, expected returns, etc)
 - $p_g$, representing the desired goal distribution of env, 
-- phi: $S \rightarrow G$ (sometimes identity), 
-Also, R is defined wrt G, and $\pi$ maximizes R over goal dist
+- $\phi$: $S \rightarrow G$ (identity when current state is the goal), 
+Also, R is defined with respect to G, and $\pi$ maximizes R over goal dist
 
 Our overall loss function is the sum of losses for each goal multiplied by the weights for each goal. Luckily, each goal, given they’re in the same env, shares the same state/action dimensions, reward computing, and structure, so we can learn and share features across tasks. 
 
-#### [state-occupancy matching]()
+#### [State-occupancy matching]()
 In state-occupancy matching, we try to make equal the amount a state is visited between distinct distributions (for example, as applied in GoFar below, between the state distributions of various tasks). The intuition here is to encourage the use of similar ‘skills/patterns’ between our ideal offline distribution and our learned policy action distribution to accelerate learning.
 
 ### Algorithm Summary: 
@@ -37,38 +37,40 @@ GoFar is a regression-based offline goal-conditioned RL algorithm that formulate
 
 ### First objective
 
-$Min_\pi D_{KL}(d^\pi(s;g)\|p(s;g))$
+$Min_\pi D_{KL}(d^\pi(s;g)||p(s;g))$
 
 Where:
 $\pi$: policy
 $D_{KL}$: Kullback-Leibler Divergence, measures the difference between two probability distributions (essentially relative entropies compared)
-$D_{KL}(P\|Q) = Σ P(x) * log(P(x)/Q(x))$
+$D_{KL}(P||Q) = Σ P(x) * log(P(x)/Q(x))$
 
 $d^\pi(s;g)$: goal-conditioned state-occupancy distribution of $\pi$
 $p(s;g)$: distribution of states that satisfy g
 
 Essentially, this quantifies the relative difference in entropies of the distribution of how much the policy is occupying goal states relative to the distribution of goal states. The actual ‘dynamics-abiding’ agent (left of ||) is trying to imitate the ‘teleporting’ agent (right of ||).
 
-Now we use f-divergence regularization to get our second and final regression-based policy training objective, weighted by the optimal advantage function which uses the dual optimal value function V*:
+However, this depends on actions, but we want an objective independent of policy. Thus we use f-divergence regularization to get our dual problem:
 
 ### Dual problem Optimization
 $\min_{V(s,g) \geq 0} (1-\gamma)\mathbb{E}{(s,g)\sim\mu_0,p(g)}[V(s;g)] + \mathbb{E}{(s,a,g)\sim d^O}[f^*(R(s;g) + \gamma\mathcal{T}V(s,a;g) - V(s;g))] $
 
-dual optimal advantage, $R(s; g) + γT V ∗ (s, a; g) − V ∗ (s; g)$; also called f-advantage (hence f-advantage regression)
-
-This is the minimum over nonnegative Values of the discounted expectation over initial states and goals of the Value plus expectation over the offline distribution of the convex conjugate of f-divergence of advantage
+This is the minimum over nonnegative Values of the discounted expectation over initial states and goals of the Value plus expectation over the (empirical) offline distribution of the convex conjugate of f-divergence of advantage
 
 With definitions:
 - Convex conjugate: for $f(x)$, $sup_x[<y,x> - f(x)]$ (convert to unconstrained by implicitly satisfying bellman flow constraint (how))
-- F-divergence: the difference between two prob distributions (similar to in the context of state-occupancy matching
+- F-divergence: the difference between two prob distributions (similar to in the context of state-occupancy matching (implemented as Chi-squared divergence ($\int (P(x) - Q(x))^2 / Q(x)$)
 - Advantage: reward of this action plus discounted next state EV (from this action) - current state EV (Measures how good or bad this action is compared to the average action)
 
-Overall, we find V that minimizes both EV of initial states/goals *and* f-divergence using the advantage function (which ensures learned policy is close to offline data actions). This allows for finding optimal value functions with only offline data. 
+Overall, we find V that minimizes both EV of initial states/goals and f-divergence of the offline/trained distributions using the advantage function (which ensures learned policy is close to offline data actions). This allows for finding optimal value functions with only offline data. 
+
+We then use a self-supervised regression update for the policy:
 
 ### Policy Updating
 $\max_{\pi} \mathbb{E}{g\sim p(g)}\mathbb{E}{(s,a)\sim d^O(s,a;g)}[f'_(R(s;g) + \gamma\mathcal{T}V^(s,a;g) - V^*(s;g)) \log \pi(a|s,g)] $
 
-This finds the maximum over policies of expectation over goals from goal distribution given expectation over states and goals from offline distribution of derivative of the convex conjugate of [(f-divergence function of advantage) + log probability of policy taking action given state and goal. It finds the policy to maximize the expected f-advantage weighted log prob of actions in the offline dataset. It uses weighted behavioral cloning, where high-advantage actions get more weight, with f-divergence ensuring similarity between offline and learned policy
+This finds the maximum over policies of expectation over goals from goal distribution given expectation over states and goals from offline distribution of derivative of the convex conjugate of [(f-divergence function of advantage) + log probability of policy taking action given state and goal. It finds the policy to maximize the expected f-advantage weighted log prob of actions in the offline dataset. It uses weighted behavioral cloning, where high-advantage actions get more weight.
+
+The dual-optimal advantage, $R(s; g) + γT V ∗ (s, a; g) − V ∗ (s; g)$ is also called f-advantage (hence f-advantage regression)
 
 With this setup, no hindsight relabeling is needed, and the optimal value is learned without learned policy interleaving (why?). Essentially, this Reformulates RL as supervised learning!
 
@@ -79,7 +81,7 @@ Run-through:
 3. Train policy $\pi$ via f-Advantage Regression
 
 ### Key Takeaways/Innovations
-With GoFar, we can learn exclusively from offline behavior via f-divergence to optimize the advantage and similarity of actions between offline optimal ‘teleporter’ policy and the learned policy. The dual divergence objective function allows for unconstrained optimization, and the formulation into supervised learning gives all the theoretical SL advantages. 
+With GoFar, we can learn exclusively from offline behavior via f-divergence to optimize the advantage and similarity of actions between the offline optimal ‘teleporter’ policy and the learned policy. The dual divergence objective function allows for unconstrained optimization, and the formulation into supervised learning gives all the theoretical SL advantages. 
 
 
 # VIP: Towards Universal Visual Reward and Representation via Value-Implicit Pretraining
@@ -92,10 +94,10 @@ Ideally, we could specify real-world task reward functions by specifying goal im
 ### Summary
 VIP is a self-supervised pre-trained visual representation to generate dense/smooth embedding-based reward functions for unseen tasks. We do so using a novel implicit time contrastive objective. We can then use this learned reward function for goal-image-specified downstream tasks.
 
-### Key Innovation: 
-Instead of solving impossible direct policy learning from out-of-domain action-free vids, we solve the Fenchel dual problem of goal-conditioned value function learning, which can be trained without actions and entirely self-supervised.
+#### Key Innovation: 
+Instead of solving impossible direct policy learning from out-of-domain action-free vids, we solve the dual problem of goal-conditioned value function learning, which can be trained without actions and entirely self-supervised.
 
-VIP is thus suitable for pretraining on out-of-domain videos with no robot action labels!
+VIP is suitable for pretraining on out-of-domain videos with no robot action labels!
 
 ### Context
 
@@ -104,7 +106,7 @@ In time contrastive learning, we take in a video and try to produce embedding va
 
 We treat segments close in time as positive examples and segments far in time as negative examples, then train a model to distinguish between them. We use a learned encoder to take in images and output K in the embedding dimension. (Clarify this).
 
-We evaluate learned representations by constructing an MDP from it defined by:
+We evaluate learned representations by constructing a [Markov Decision Process](https://en.wikipedia.org/wiki/Markov_decision_process) from it defined by:
 $M(\phi) := (\phi(O), A, R(o_t, o_{t+1}; \phi, g), T, \gamma, g)$
 Where $\phi(O)$ are the embedded observations
 
@@ -124,7 +126,7 @@ We start with the KL-regularized offline RL objective of learning from human vid
 This is the maximum over (policy of human actions $pi^H$ and phi) of expectation over $pi^H$ of (sum over t of t-discounted reward) - Kullback-Liebler Divergence of (distribution over observations and actions visited by $pi^H$ conditioned on G) given (distribution from dataset D with dummy action.
 Essentially, this maximizes expected reward while keeping learned policy close to distribution.
 
-We then use Fenchel duality to derive a dual optimization problem over value function:
+We then use [Fenchel duality](https://en.wikipedia.org/wiki/Fenchel%27s_duality_theorem) to derive a dual optimization problem over value function:
     - $\max_\phi \min_V \mathbb{E}_{p(g)}\Big[(1 - \gamma)\mathbb{E}_{\mu_0(o;g)}[V(\phi(o); \phi(g))] + \log \mathbb{E}_{(o,o';g)\sim D} [\exp (r(o, g) + \gamma V(\phi(o'); \phi(g)) - V(\phi(o), \phi(g)))]\Big]$
 
 Where:
@@ -179,7 +181,7 @@ Run-through:
 
 ### Formalization
 
-$MDP M = (S, A, T)$ 
+Markov Decision Process $M = (S, A, T)$ 
 Where S is the environment state space, A is the action space, and T is the state transition function
 
 Our true task objective $F: \Pi \rightarrow R$, policy to scalar performance eval

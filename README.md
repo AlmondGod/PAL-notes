@@ -234,7 +234,3 @@ LLM uses resulting “reward aware physics priors (RAPP)” to generate DR confi
 1. Given the DR configuration candidate, generated reward function, and environment simulator, 
 2. Retrain policies suitable for real-world deployment using reinforcement learning on each DR config candidate
 3. Evaluate all policies pi in the real world and choose the ‘best performing’
-
-
-
-

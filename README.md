@@ -15,7 +15,7 @@ In offline GCRL, we have a static dataset of transitions (s,a,r,...) with goal g
 We have extra tuple inputs to the problem:
 - G, representing the space of goals for each task (Goals can be images, natural language, expected returns, etc)
 - $p_g$, representing the desired goal distribution of env, 
-- phi: $S->G$ (sometimes identity), 
+- phi: $S \rightarrow G$ (sometimes identity), 
 Also, R is defined wrt G, and $\pi$ maximizes R over goal dist
 
 Our overall loss function is the sum of losses for each goal multiplied by the weights for each goal. Luckily, each goal, given they’re in the same env, shares the same state/action dimensions, reward computing, and structure, so we can learn and share features across tasks. 
@@ -37,12 +37,12 @@ GoFar is a regression-based offline goal-conditioned RL algorithm that formulate
 
 ### First objective
 
-$Min_\pi D_{KL}(d^\pi(s;g)||p(s;g))$
+$Min_\pi D_{KL}(d^\pi(s;g)\|p(s;g))$
 
 Where:
 $\pi$: policy
 $D_{KL}$: Kullback-Leibler Divergence, measures the difference between two probability distributions (essentially relative entropies compared)
-$D_{KL}(P||Q) = Σ P(x) * log(P(x)/Q(x))$
+$D_{KL}(P\|Q) = Σ P(x) * log(P(x)/Q(x))$
 
 $d^\pi(s;g)$: goal-conditioned state-occupancy distribution of $\pi$
 $p(s;g)$: distribution of states that satisfy g
@@ -182,7 +182,7 @@ Run-through:
 $MDP M = (S, A, T)$ 
 Where S is the environment state space, A is the action space, and T is the state transition function
 
-Our true task objective $F: \Pi -> R$, policy to scalar performance eval
+Our true task objective $F: \Pi \rightarrow R$, policy to scalar performance eval
 
 A sim2real algorithm for reward design + Domain Randomization takes M and a list of tasks $l_{task}$, and outputs reward fun R and distribution over transition functions $\Tau$.
 

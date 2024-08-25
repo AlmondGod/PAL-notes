@@ -58,7 +58,7 @@ This is the minimum over nonnegative Values of the discounted expectation over i
 
 With definitions:
 - Convex conjugate: for $f(x)$, $sup_x[<y,x> - f(x)]$ (convert to unconstrained by implicitly satisfying bellman flow constraint (how))
-- F-divergence: the difference between two prob distributions (similar to in the context of state-occupancy matching (implemented as Chi-squared divergence ($\int (P(x) - Q(x))^2 / Q(x)$)
+- F-divergence: the difference between two prob distributions (similar to in the context of state-occupancy matching, implemented as Chi-squared divergence ($\int (P(x) - Q(x))^2 / Q(x)$))
 - Advantage: reward of this action plus discounted next state EV (from this action) - current state EV (Measures how good or bad this action is compared to the average action)
 
 Overall, we find V that minimizes both EV of initial states/goals and f-divergence of the offline/trained distributions using the advantage function (which ensures learned policy is close to offline data actions). This allows for finding optimal value functions with only offline data. 
@@ -72,7 +72,7 @@ This finds the maximum over policies of expectation over goals from goal distrib
 
 The dual-optimal advantage, $R(s; g) + γT V ∗ (s, a; g) − V ∗ (s; g)$ is also called f-advantage (hence f-advantage regression)
 
-With this setup, no hindsight relabeling is needed, and the optimal value is learned without learned policy interleaving (why?). Essentially, this Reformulates RL as supervised learning!
+With this setup, no hindsight relabeling is needed, and the optimal value is learned without learned policy interleaving. Essentially, this Reformulates RL as supervised learning!
 
 ### Algorithm
 Run-through:
@@ -104,7 +104,7 @@ VIP is suitable for pretraining on out-of-domain videos with no robot action lab
 #### [Time-contrastive learning](https://arxiv.org/abs/1704.06888): 
 In time contrastive learning, we take in a video and try to produce embedding values for each frame representing the distance to a goal frame. Frames closer together are more likely to be similar in the embedding space. Moreover, we want the embedding to be smooth between frames, so there should be a similarity metric in embedding space between the current frame and the goal frame (so following trajectory the transitions in value should be smooth)
 
-We treat segments close in time as positive examples and segments far in time as negative examples, then train a model to distinguish between them. We use a learned encoder to take in images and output K in the embedding dimension. (Clarify this).
+We treat segments close in time as positive examples and segments far in time as negative examples, then train a model to distinguish between them. Specfically, we use a learned encoder to take in images and output K in the embedding dimension, where semantically far frames should have far embeddings.
 
 We evaluate learned representations by constructing a [Markov Decision Process](https://en.wikipedia.org/wiki/Markov_decision_process) from it defined by:
 $M(\phi) := (\phi(O), A, R(o_t, o_{t+1}; \phi, g), T, \gamma, g)$
@@ -123,7 +123,7 @@ Essentially the reward function measures progress toward the goal in the represe
 We start with the KL-regularized offline RL objective of learning from human videos:
     - $\max_{\pi^H, \phi} \mathbb{E}_{\pi^H}\left[\sum_t \gamma^t r(o; g)\right] - D_{KL}(d^{\pi^H}(o, a^H; g) \| d^D(o, \tilde{a}^H; g))$
 
-This is the maximum over (policy of human actions $pi^H$ and phi) of expectation over $pi^H$ of (sum over t of t-discounted reward) - Kullback-Liebler Divergence of (distribution over observations and actions visited by $pi^H$ conditioned on G) given (distribution from dataset D with dummy action.
+This is the maximum over (policy of human actions $pi^H$ and phi) of expectation over $pi^H$ of (sum over t of t-discounted reward) - Kullback-Liebler Divergence of (distribution over observations and actions visited by $pi^H$ conditioned on G) given (distribution from dataset D with dummy action)
 Essentially, this maximizes expected reward while keeping learned policy close to distribution.
 
 We then use [Fenchel duality](https://en.wikipedia.org/wiki/Fenchel%27s_duality_theorem) to derive a dual optimization problem over value function:
